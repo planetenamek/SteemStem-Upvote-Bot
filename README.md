@@ -1,3 +1,7 @@
+## Configuration
+
+Just add your data into config.json
+
 ## Installation 
 
 npm install 
