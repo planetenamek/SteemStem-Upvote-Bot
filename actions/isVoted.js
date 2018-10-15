@@ -6,7 +6,7 @@ module.exports = {
         return new Promise((resolve, reject) => {
             steem.api.getContent(author, permlink, function(err, res) {
                 if (err) {
-                    reject('------ Erreur promesse isVoted !')
+                    reject('------ Error promise isVoted!')
                 } else {
                     var voters = res.active_votes;
                     var ArVoters = []
