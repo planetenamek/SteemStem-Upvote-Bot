@@ -21,7 +21,7 @@ module.exports = {
                         } else {
                             resolve(true)
                         }
-                    }, 3000)
+                    }, 1500)
                 }
             });
         })
