@@ -3,8 +3,10 @@ const config = require("./../config.json");
 
 var mongoose = require('mongoose');
 var CuratorSchema = require('./../db/curatorSchema.js')
-
 var CuratorModel = mongoose.model('curators', CuratorSchema.CuratorSchema);
+
+var SteemitMemberSchema = require('./../db/steemitMemberSchema.js')
+var SteemitMemberModel = mongoose.model('steemit_members', SteemitMemberSchema.SteemitMemberSchema);
 
 var Vote = require('./upvote.js');
 var isVote = require('./isVoted.js');
@@ -25,150 +27,163 @@ module.exports = {
                 return message.channel.send("Access denied.")
             } else {
                 var role = res.role;
-                parseInt(value1)
-                parseInt(value2)
-                if (role === 'community') {
-                    if (value1 >= 0 && value1 <= community_value) {
-                        if (value2 >= 0 && value2 <= community_value) {
-
-                            if (value1 > 0) {
-                                // check if the publication exists
-                                author1 = author.substring(1, author.length)
-
-                                steem.api.getContent(author1, permlink, function(err, result) {
-                                    if (err) {
-                                        return message.channel.send("Error ! Please try again !")
-                                    } else {
-                                        if (result.author.length > 0 && result != undefined) {
-                                            // Send vote ! 
-                                            isVote.isVoted(author1, permlink, voters[0].username)
-                                                .then(function(val) {
-                                                    if (val) {
-                                                        var weight1 = parseInt(value1) * 100
-                                                        Vote.upvote(voters[0].wif, voters[0].username, author1, permlink, weight1)
-                                                            .then(function(val) {
-                                                                message.channel.send("Upvote from @" + voters[0].username + " done :white_check_mark:")
-                                                                if (value2 > 0) {
-                                                                    isVote.isVoted(author1, permlink, voters[1].username)
-                                                                        .then(function(val) {
-                                                                            if (val) {
-                                                                                var weight2 = parseInt(value2) * 100
-                                                                                Vote.upvote(voters[1].wif, voters[1].username, author1, permlink, weight2)
-                                                                                    .then(function(val) {
-                                                                                        if (val) {
-                                                                                            //Send comment
-                                                                                            message.channel.send("Upvote from @" + voters[1].username + " done :white_check_mark:")
-                                                                                            message.channel.send("Sending comment...")
-                                                                                            return Comment.sendComment(author1, permlink, value1, value2, message)
-                                                                                        } else {
-                                                                                             console.log("No val from @dna-replication upvote !")
-                                                                                        }
-                                                                                    }).catch(function(err) {
-                                                                                        console.log("Error : " + err)
-                                                                                        return message.channel.send("Error in upvote dna replication")
-                                                                                    })
-                                                                            } else {
-                                                                                message.channel.send("Already upvoted by @" + voters[1].username)
-                                                                            }
-                                                                        }).catch(function(err) {
-                                                                            return message.channel.send("Error in is voted dna-replication !")
-                                                                        })
-                                                                } else {
-                                                                    // Send comment
-                                                                    message.channel.send("Sending comment...")
-                                                                    return Comment.sendComment(author1, permlink, value1, value2, message)
-                                                                }
-                                                            }).catch(function(err) {
-                                                                return message.channel.send("Error with @steemstem upvote !")
-                                                            })
-                                                    } else {
-                                                        return message.channel.send("Already upvoted !")
-                                                    }
-                                                }).catch(function(err) {
-                                                    console.log("Error : " + err)
-                                                    return message.channel.send("Error please try again !")
-                                                })
-                                        } else {
-                                            return message.channel.send("Invalid url !")
-                                        }
-                                    }
-                                })
-                            }
-                        } else {
-                            return message.channel.send("Value from Curie not valid. Your limit is 5%")
-                        }
-                    } else {
-                        return message.channel.send("Value from Steemstem not valid. Your limit is 5%")
+                SteemitMemberModel.findOne({
+                    username: author.replace("@", "").toLowerCase()
+                }, function(err, res){
+                    if (err){
+                        return message.channel.send("Error ! Please try again !");
                     }
-                } else if (role === 'general') {
-                    if (value1 > 0 && value1 <= general_value) {
-                        if (value2 >= 0 && value2 <= general_value) {
-                            author1 = author.substring(1, author.length)
-                            steem.api.getContent(author1, permlink, function(err, result) {
-                                if (err) {
-                                    return message.channel.send("Error ! Please try again !")
-                                } else {
-                                    if (result.author.length > 0 && result != undefined) {
-                                        // Send vote ! 
-                                        isVote.isVoted(author1, permlink, voters[0].username)
-                                            .then(function(val) {
-                                                if (val) {
-                                                    var weight1 = parseInt(value1) * 100
-                                                    Vote.upvote(voters[0].wif, voters[0].username, author1, permlink, weight1)
+                    if (res != null && res.list === "blacklist"){
+                        return message.channel.send("Sorry, this user is blacklisted.");
+                    }
+                    else{
+                        parseInt(value1)
+                        parseInt(value2)
+                        if (role === 'community') {
+                            if (value1 >= 0 && value1 <= community_value) {
+                                if (value2 >= 0 && value2 <= community_value) {
+
+                                    if (value1 > 0) {
+                                        // check if the publication exists
+                                        author1 = author.substring(1, author.length)
+
+                                        steem.api.getContent(author1, permlink, function(err, result) {
+                                            if (err) {
+                                                return message.channel.send("Error ! Please try again !")
+                                            } else {
+                                                if (result.author.length > 0 && result != undefined) {
+                                                    // Send vote ! 
+                                                    isVote.isVoted(author1, permlink, voters[0].username)
                                                         .then(function(val) {
-                                                            message.channel.send("Upvote from @" + voters[0].username + " done :white_check_mark:")
-                                                            if (value2 > 0) {
-                                                                isVote.isVoted(author1, permlink, voters[1].username)
+                                                            if (val) {
+                                                                var weight1 = parseInt(value1) * 100
+                                                                Vote.upvote(voters[0].wif, voters[0].username, author1, permlink, weight1)
                                                                     .then(function(val) {
-                                                                        if (val) {
-                                                                            var weight2 = parseInt(value2) * 100
-                                                                            Vote.upvote(voters[1].wif, voters[1].username, author1, permlink, weight2)
+                                                                        message.channel.send("Upvote from @" + voters[0].username + " done :white_check_mark:")
+                                                                        if (value2 > 0) {
+                                                                            isVote.isVoted(author1, permlink, voters[1].username)
                                                                                 .then(function(val) {
                                                                                     if (val) {
-                                                                                        //Send comment
-                                                                                        message.channel.send("Upvote from @" + voters[1].username + " done :white_check_mark:")
-                                                                                        message.channel.send("Sending comment...")
-                                                                                        return Comment.sendComment(author1, permlink, value1, value2, message)
+                                                                                        var weight2 = parseInt(value2) * 100
+                                                                                        Vote.upvote(voters[1].wif, voters[1].username, author1, permlink, weight2)
+                                                                                            .then(function(val) {
+                                                                                                if (val) {
+                                                                                                    //Send comment
+                                                                                                    message.channel.send("Upvote from @" + voters[1].username + " done :white_check_mark:")
+                                                                                                    message.channel.send("Sending comment...")
+                                                                                                    return Comment.sendComment(author1, permlink, value1, value2, message)
+                                                                                                } else {
+                                                                                                     console.log("No val from @dna-replication upvote !")
+                                                                                                }
+                                                                                            }).catch(function(err) {
+                                                                                                console.log("Error : " + err)
+                                                                                                return message.channel.send("Error in upvote dna replication")
+                                                                                            })
                                                                                     } else {
-                                                                                        return console.log("No val from @dna-replication upvote !")
+                                                                                        message.channel.send("Already upvoted by @" + voters[1].username)
                                                                                     }
                                                                                 }).catch(function(err) {
-                                                                                    console.log("Error : " + err)
-                                                                                    return message.channel.send("Error in upvote dna replication")
+                                                                                    return message.channel.send("Error in is voted dna-replication !")
                                                                                 })
                                                                         } else {
-                                                                            message.channel.send("Already upvoted by @" + voters[1].username)
+                                                                            // Send comment
+                                                                            message.channel.send("Sending comment...")
+                                                                            return Comment.sendComment(author1, permlink, value1, value2, message)
                                                                         }
                                                                     }).catch(function(err) {
-                                                                        return message.channel.send("Error in is voted dna-replication !")
+                                                                        return message.channel.send("Error with @steemstem upvote !")
                                                                     })
                                                             } else {
-                                                                // Send comment
-                                                                message.channel.send("Sending comment...")
-                                                                return Comment.sendComment(author1, permlink, value1, value2, message)
+                                                                return message.channel.send("Already upvoted !")
                                                             }
                                                         }).catch(function(err) {
-                                                            return message.channel.send("Error with @steemstem upvote !")
+                                                            console.log("Error : " + err)
+                                                            return message.channel.send("Error please try again !")
                                                         })
                                                 } else {
-                                                    return message.channel.send("Already upvoted !")
+                                                    return message.channel.send("Invalid url !")
                                                 }
-                                            }).catch(function(err) {
-                                                console.log("Error : " + err)
-                                                return message.channel.send("Error please try again !")
-                                            })
-                                    } else {
-                                        return message.channel.send("Invalid url !")
+                                            }
+                                        })
                                     }
+                                } else {
+                                    return message.channel.send("Value from Curie not valid. Your limit is 5%")
                                 }
-                            })
-                        } else {
-                            return message.channel.send("Value from Curie not valid. Limit is 100% ")
+                            } else {
+                                return message.channel.send("Value from Steemstem not valid. Your limit is 5%")
+                            }
+                        } else if (role === 'general') {
+                            if (value1 > 0 && value1 <= general_value) {
+                                if (value2 >= 0 && value2 <= general_value) {
+                                    author1 = author.substring(1, author.length)
+                                    steem.api.getContent(author1, permlink, function(err, result) {
+                                        if (err) {
+                                            return message.channel.send("Error ! Please try again !")
+                                        } else {
+                                            if (result.author.length > 0 && result != undefined) {
+                                                // Send vote ! 
+                                                isVote.isVoted(author1, permlink, voters[0].username)
+                                                    .then(function(val) {
+                                                        if (val) {
+                                                            var weight1 = parseInt(value1) * 100
+                                                            Vote.upvote(voters[0].wif, voters[0].username, author1, permlink, weight1)
+                                                                .then(function(val) {
+                                                                    message.channel.send("Upvote from @" + voters[0].username + " done :white_check_mark:")
+                                                                    if (value2 > 0) {
+                                                                        isVote.isVoted(author1, permlink, voters[1].username)
+                                                                            .then(function(val) {
+                                                                                if (val) {
+                                                                                    var weight2 = parseInt(value2) * 100
+                                                                                    Vote.upvote(voters[1].wif, voters[1].username, author1, permlink, weight2)
+                                                                                        .then(function(val) {
+                                                                                            if (val) {
+                                                                                                //Send comment
+                                                                                                message.channel.send("Upvote from @" + voters[1].username + " done :white_check_mark:")
+                                                                                                message.channel.send("Sending comment...")
+                                                                                                return Comment.sendComment(author1, permlink, value1, value2, message)
+                                                                                            } else {
+                                                                                                return console.log("No val from @dna-replication upvote !")
+                                                                                            }
+                                                                                        }).catch(function(err) {
+                                                                                            console.log("Error : " + err)
+                                                                                            return message.channel.send("Error in upvote dna replication")
+                                                                                        })
+                                                                                } else {
+                                                                                    message.channel.send("Already upvoted by @" + voters[1].username)
+                                                                                }
+                                                                            }).catch(function(err) {
+                                                                                return message.channel.send("Error in is voted dna-replication !")
+                                                                            })
+                                                                    } else {
+                                                                        // Send comment
+                                                                        message.channel.send("Sending comment...")
+                                                                        return Comment.sendComment(author1, permlink, value1, value2, message)
+                                                                    }
+                                                                }).catch(function(err) {
+                                                                    return message.channel.send("Error with @steemstem upvote !")
+                                                                })
+                                                        } else {
+                                                            return message.channel.send("Already upvoted !")
+                                                        }
+                                                    }).catch(function(err) {
+                                                        console.log("Error : " + err)
+                                                        return message.channel.send("Error please try again !")
+                                                    })
+                                            } else {
+                                                return message.channel.send("Invalid url !")
+                                            }
+                                        }
+                                    })
+                                } else {
+                                    return message.channel.send("Value from Curie not valid. Limit is 100% ")
+                                }
+                            } else {
+                                return message.channel.send("Value from Steemstem not valid. Limit is 100% or > 0%")
+                            }
                         }
-                    } else {
-                        return message.channel.send("Value from Steemstem not valid. Limit is 100% or > 0%")
+
                     }
-                }
+                });
             }
         })
     }
